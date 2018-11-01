@@ -37,7 +37,7 @@ namespace UnaCMS
         /// <param name="cmdline"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        private static bool ExuecuteNonQueryWithParam(string cmdline,SqlParameter[] parameters)
+        private static bool ExecuteNonQueryWithParam(string cmdline,SqlParameter[] parameters)
         {
             using(SqlConnection conn = DbConn())
             {
@@ -205,7 +205,7 @@ namespace UnaCMS
                 new SqlParameter("@name",name),
                 new SqlParameter("@title",title)
             };
-            return ExuecuteNonQueryWithParam(cmdline, parameters);
+            return ExecuteNonQueryWithParam(cmdline, parameters);
         }
         /// <summary>
         /// 更新频道
@@ -225,7 +225,7 @@ namespace UnaCMS
                 new SqlParameter("@title",title),
                 new SqlParameter("@id",id)
             };
-            return ExuecuteNonQueryWithParam(cmdline, parameters);
+            return ExecuteNonQueryWithParam(cmdline, parameters);
         }
         /// <summary>
         /// 删除频道
@@ -239,7 +239,7 @@ namespace UnaCMS
             {
                 new SqlParameter("@id",id)
             };
-            return ExuecuteNonQueryWithParam(cmdline, parameters);
+            return ExecuteNonQueryWithParam(cmdline, parameters);
         }
         /// <summary>
         /// 获取所有频道
@@ -248,6 +248,88 @@ namespace UnaCMS
         public static JArray QueryChannel()
         {
             string cmdline = "select * from [una].[channel]";
+            return ExecuteQueryWithNoParam(cmdline);
+        }
+        #endregion
+
+
+        #region 导航
+        /// <summary>
+        /// 添加导航
+        /// </summary>
+        /// <param name="idparent"></param>
+        /// <param name="idchannel"></param>
+        /// <param name="navtype"></param>
+        /// <param name="name"></param>
+        /// <param name="iconurl"></param>
+        /// <param name="linkurl"></param>
+        /// <param name="remark"></param>
+        /// <returns></returns>
+        public static bool AddNavigation(int idparent,int idchannel,string navtype,string name,string iconurl,string linkurl,string remark)
+        {
+            string cmdline = "insert into [una].[navigation] values(@idparent,@idchannel,@navtype,@name,@iconurl,@linkurl,@remark,@addtime)";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@idparent",idparent),
+                new SqlParameter("@idchannel",idchannel),
+                new SqlParameter("@navtype",navtype),
+                new SqlParameter("@name",name),
+                new SqlParameter("@iconurl",iconurl),
+                new SqlParameter("@linkurl",linkurl),
+                new SqlParameter("@remark",remark),
+                new SqlParameter("@addtime",DateTime.Now)
+            };
+            return ExecuteNonQueryWithParam(cmdline, parameters);
+        }
+        /// <summary>
+        /// 更新导航信息
+        /// </summary>
+        /// <param name="idparent"></param>
+        /// <param name="idchannel"></param>
+        /// <param name="navtype"></param>
+        /// <param name="name"></param>
+        /// <param name="iconurl"></param>
+        /// <param name="linkurl"></param>
+        /// <param name="remark"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static bool UpdateNavigation(int idparent,int idchannel,string navtype,string name,string iconurl,string linkurl,string remark,int id)
+        {
+            string cmdline = "update [una].[navigation] set idparent=@idparent,idchannel=@idchannel,navtype=@navtype,name=@name,iconurl=@iconurl,linkurl=@linkurl,remark=@remark where id=@id";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@idparent",idparent),
+                new SqlParameter("@idchannel",idchannel),
+                new SqlParameter("@navtype",navtype),
+                new SqlParameter("@name",name),
+                new SqlParameter("@iconurl",iconurl),
+                new SqlParameter("@linkurl",linkurl),
+                new SqlParameter("@remark",remark),
+                new SqlParameter("@id",id)
+            };
+            return ExecuteNonQueryWithParam(cmdline, parameters);
+        }
+        /// <summary>
+        /// 删除导航信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static bool DeleteNavigation(int id)
+        {
+            string cmdline = "delete from [una].[navigation] where id=@id or idparent=@id";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@id",id)
+            };
+            return ExecuteNonQueryWithParam(cmdline, parameters);
+        }
+        /// <summary>
+        /// 获取所有导航信息
+        /// </summary>
+        /// <returns></returns>
+        public static JArray QueryNavigation()
+        {
+            string cmdline = "select * from [una].[navigation]";
             return ExecuteQueryWithNoParam(cmdline);
         }
         #endregion
