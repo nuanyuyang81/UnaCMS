@@ -1,6 +1,9 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Web;
@@ -9,6 +12,7 @@ namespace UnaCMS
 {
     public class DbOp
     {
+        #region 通用函数
         /// <summary>
         /// 连接数据库
         /// </summary>
@@ -27,6 +31,51 @@ namespace UnaCMS
             }
             return conn;
         }
+        /// <summary>
+        /// 执行带参NonQuery数据库命令，返回是否执行成功
+        /// </summary>
+        /// <param name="cmdline"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        private static bool ExuecuteNonQueryWithParam(string cmdline,SqlParameter[] parameters)
+        {
+            using(SqlConnection conn = DbConn())
+            {
+                SqlCommand cmd = new SqlCommand(cmdline, conn);
+                cmd.Parameters.AddRange(parameters);
+                try
+                {
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+                catch(SqlException ex)
+                {
+                    throw ex;
+                }
+            }
+        }
+        /// <summary>
+        /// 执行带参Query数据库命令，返回JArry
+        /// </summary>
+        /// <param name="cmdline"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        private static JArray ExecuteQueryWithParam(string cmdline, SqlParameter[] parameters)
+        {
+            using (SqlConnection conn = DbConn())
+            {
+                SqlCommand cmd = new SqlCommand(cmdline, conn);
+                cmd.Parameters.AddRange(parameters);
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                DataSet ds = new DataSet();
+                da.Fill(ds);
+                if (ds != null)
+                {
+                    return JArray.FromObject(ds.Tables[0], JsonSerializer.CreateDefault(new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                }
+            }
+            return null;
+        }
+        #endregion
         #region 用户组
         /// <summary>
         /// 添加用户组
