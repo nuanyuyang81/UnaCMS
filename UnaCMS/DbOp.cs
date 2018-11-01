@@ -75,6 +75,27 @@ namespace UnaCMS
             }
             return null;
         }
+        /// <summary>
+        /// 执行不带参Query数据库命令，返回JArry
+        /// </summary>
+        /// <param name="cmdline"></param>
+        /// <returns></returns>
+        private static JArray ExecuteQueryWithNoParam(string cmdline)
+        {
+            using (SqlConnection conn = DbConn())
+            {
+                SqlCommand cmd = new SqlCommand(cmdline, conn);
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                DataSet ds = new DataSet();
+                da.Fill(ds);
+                if (ds != null)
+                {
+                    return JArray.FromObject(ds.Tables[0], JsonSerializer.CreateDefault(new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                }
+            }
+            return null;
+        }
+
         #endregion
         #region 用户组
         /// <summary>
@@ -169,7 +190,66 @@ namespace UnaCMS
         #endregion
 
         #region 频道
-        public static void AddChannel()
+        /// <summary>
+        /// 添加频道，默认status true
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="title"></param>
+        /// <returns></returns>
+        public static bool AddChannel(string name,string title)
+        {
+            string cmdline = "insert into [una].[channel] values(@status,@name,@title)";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@status",true),
+                new SqlParameter("@name",name),
+                new SqlParameter("@title",title)
+            };
+            return ExuecuteNonQueryWithParam(cmdline, parameters);
+        }
+        /// <summary>
+        /// 更新频道
+        /// </summary>
+        /// <param name="status"></param>
+        /// <param name="name"></param>
+        /// <param name="title"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static bool UpdateChannel(bool status,string name,string title,int id)
+        {
+            string cmdline = "update [una].[channel] set status=@status,name=@name,title=@title where id=@id";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@status",status),
+                new SqlParameter("@name",name),
+                new SqlParameter("@title",title),
+                new SqlParameter("@id",id)
+            };
+            return ExuecuteNonQueryWithParam(cmdline, parameters);
+        }
+        /// <summary>
+        /// 删除频道
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static bool DeleteChannel(int id)
+        {
+            string cmdline = "delete from [una].[channel] where id=@id";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@id",id)
+            };
+            return ExuecuteNonQueryWithParam(cmdline, parameters);
+        }
+        /// <summary>
+        /// 获取所有频道
+        /// </summary>
+        /// <returns></returns>
+        public static JArray QueryChannel()
+        {
+            string cmdline = "select * from [una].[channel]";
+            return ExecuteQueryWithNoParam(cmdline);
+        }
         #endregion
     }
 }
