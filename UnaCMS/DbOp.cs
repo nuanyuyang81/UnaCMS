@@ -7,6 +7,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Web;
+using UnaUtility;
 
 namespace UnaCMS
 {
@@ -117,6 +118,7 @@ namespace UnaCMS
             return null;
         }
         #endregion
+
         #region 用户组
         /// <summary>
         /// 添加用户组
@@ -291,7 +293,7 @@ namespace UnaCMS
                 JArray result = ExecuteQueryWithParam(cmdline, parameters);
                 if (result != null && result.Count > 0)
                 {
-                    return "登录成功";
+                    return string.Format("用户:{0} 登录成功，Id:{1}",result["username"].ToString(),result["id"].ToString());
                 }
                 else
                 {
@@ -303,10 +305,75 @@ namespace UnaCMS
                 return "用户不存在";
             }
         }
-
+        /// <summary>
+        /// 获取用户信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static JObject GetUserInfo(Guid id)
+        {
+            string cmdline = "select * from [una].[user] where id=@id";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@id",id)
+            };
+            return ExecuteQueryObject(cmdline, parameters);
+        }
         #endregion
 
         #region 文章
+
+        public static bool AddArticle(int idchannel,string title,string imgurl,string summary,string content,Guid iduser,string username)
+        {
+            string cmdline = "insert into [una].[article](idchannel,title,imgurl,summary,[content],iduser,username,addtime,updatetime) values(@idchannel,@title,@imgurl,@summary,@content,@iduser,@username,@addtime,@updatetime)";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@idchannel",idchannel),
+                new SqlParameter("@title",title),
+                new SqlParameter("@imgurl",imgurl),
+                new SqlParameter("@summary",summary),
+                new SqlParameter("@content",content),
+                new SqlParameter("@iduser",iduser),
+                new SqlParameter("@username",username),
+                new SqlParameter("@addtime",DateTime.Now),
+                new SqlParameter("@updatetime",DateTime.Now)
+            };
+            return ExecuteNonQueryWithParam(cmdline, parameters);
+        }
+
+        public static bool UpdateArticle(int idchannel,string title,string imgurl,string summary,string content,string tags,ArticleStatus status,RecommendStatus recommend,Guid iduser,string username,Guid id)
+        {
+            string cmdline = "update [una].[article] set idchannel=@idchannel,title=@title,imgurl=@imgurl,summary=@summary,[content]=@";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@idchannel",idchannel),
+                new SqlParameter("@title",title),
+                new SqlParameter("@imgurl",imgurl),
+                new SqlParameter("@summary",summary),
+                new SqlParameter("@content",content),
+                new SqlParameter("@tags",tags),
+                new SqlParameter("@status",status),
+                new SqlParameter("@recommend",recommend),
+                new SqlParameter("@iduser",iduser),
+                new SqlParameter("@username",username),
+                new SqlParameter("@updatetime",DateTime.Now)
+            };
+            return ExecuteNonQueryWithParam(cmdline, parameters);
+        }
+
+        public static bool DeleteArticle(Guid id)
+        {
+            string cmdline = "delete from [una].[article] where id=@id";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@id",id)
+            };
+            return ExecuteNonQueryWithParam(cmdline, parameters);
+        }
+        public static JArray GetArticleForChannel(int idchannel,int startindex,int pagesize)
+        {
+
+        }
         #endregion
 
         #region 频道
@@ -514,6 +581,5 @@ namespace UnaCMS
         }
         #endregion
 
-        #region 
     }
 }
