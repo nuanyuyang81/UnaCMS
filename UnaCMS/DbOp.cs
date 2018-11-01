@@ -333,5 +333,66 @@ namespace UnaCMS
             return ExecuteQueryWithNoParam(cmdline);
         }
         #endregion
+
+        #region 文章标签
+        /// <summary>
+        /// 添加文章标签
+        /// </summary>
+        /// <param name="title"></param>
+        /// <param name="rank"></param>
+        /// <returns></returns>
+        public static bool AddArticleTag(string title,int rank)
+        {
+            string cmdline="insert into [una].[articletag] values(@title,@rank,@addtime)";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@title",title),
+                new SqlParameter("@rank",rank),
+                new SqlParameter("@addtime",DateTime.Now)
+            };
+            return ExecuteNonQueryWithParam(cmdline, parameters);
+        }
+        /// <summary>
+        /// 更新文章标签
+        /// </summary>
+        /// <param name="title"></param>
+        /// <param name="rank"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static bool UpdateArticleTag(string title,int rank,int id)
+        {
+            string cmdline = "update [una].[articletag] set title=@title,rank=@rank where id=@id";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@title",title),
+                new SqlParameter("@rank",rank),
+                new SqlParameter("@id",id)
+            };
+            return ExecuteNonQueryWithParam(cmdline, parameters);
+        }
+        /// <summary>
+        /// 删除文章标签
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static bool DeleteArticleTag(int id)
+        {
+            string cmdline = "delete from [una].[articletag] where id=@id";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@id",id)
+            };
+            return ExecuteNonQueryWithParam(cmdline, parameters);
+        }
+        /// <summary>
+        /// 获取所有文章标签
+        /// </summary>
+        /// <returns></returns>
+        public static JArray QueryArticleTag()
+        {
+            string cmdline = "select * from [una].[articletag]";
+            return ExecuteQueryWithNoParam(cmdline);
+        }
+        #endregion
     }
 }
