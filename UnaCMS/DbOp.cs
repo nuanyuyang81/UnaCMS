@@ -117,6 +117,45 @@ namespace UnaCMS
             }
             return null;
         }
+        /// <summary>
+        /// 执行带参查询Count命令，返回行数
+        /// </summary>
+        /// <param name="cmdline"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+
+        private static int ExecuteGetCountWithParam(string cmdline,SqlParameter[] parameters)
+        {
+            using(SqlConnection conn = DbConn())
+            {
+                SqlCommand cmd = new SqlCommand(cmdline, conn);
+                cmd.Parameters.AddRange(parameters);
+                SqlDataReader reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    return Convert.ToInt32(reader[0]);
+                }
+            }
+            return -1;
+        }
+        /// <summary>
+        /// 执行不带参查询Count命令，返回行数
+        /// </summary>
+        /// <param name="cmdline"></param>
+        /// <returns></returns>
+        private static int ExecuteGetCount(string cmdline)
+        {
+            using (SqlConnection conn = DbConn())
+            {
+                SqlCommand cmd = new SqlCommand(cmdline, conn);
+                SqlDataReader reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    return Convert.ToInt32(reader[0]);
+                }
+            }
+            return -1;
+        }
         #endregion
 
         #region 用户组
@@ -210,7 +249,7 @@ namespace UnaCMS
             string hashString = Convert.ToBase64String(hashBytes);
             if (defaultusergroup > 0)
             {
-                string cmdline = "inesrt into [una].[user](id,idgroup,username,salt,password,email,regip) values(@id,@idgroup,@username,@salt,@password,@email,@regip)";
+                string cmdline = "inesrt into [una].[user](id,idgroup,username,salt,password,email,addtime,regip) values(@id,@idgroup,@username,@salt,@password,@email,@addtime,@regip)";
                 SqlParameter[] parameters =
                 {
                     new SqlParameter("@id",Guid.NewGuid()),
@@ -219,6 +258,7 @@ namespace UnaCMS
                     new SqlParameter("@salt",salt),
                     new SqlParameter("@password",hashString),
                     new SqlParameter("@email",email),
+                    new SqlParameter("@addtime",DateTime.Now),
                     new SqlParameter("@regip",regip)
                 };
                 return ExecuteNonQueryWithParam(cmdline, parameters);
@@ -319,10 +359,48 @@ namespace UnaCMS
             };
             return ExecuteQueryObject(cmdline, parameters);
         }
+        /// <summary>
+        /// 按注册时间排序获取分页用户列表
+        /// </summary>
+        /// <param name="startindex"></param>
+        /// <param name="pagesize"></param>
+        /// <returns></returns>
+        public static JArray GetUserByAddTime(int startindex,int pagesize)
+        {
+            string cmdline = @"select top @pagesize * from 
+                                (select row_number()over(order by addtime)rownumber,* from [una].[user])a
+                                where rownumber>@prev";
+
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@pagesize",pagesize),
+                new SqlParameter("@prev",(startindex-1)*pagesize)
+            };
+            return ExecuteQueryWithParam(cmdline, parameters);
+        }
+        /// <summary>
+        /// 获取用户总数
+        /// </summary>
+        /// <returns></returns>
+        public static int GetTotalUserCount()
+        {
+            string cmdline = "select count(*) from [una].[user]";
+            return ExecuteGetCount(cmdline);
+        }
         #endregion
 
         #region 文章
-
+        /// <summary>
+        /// 添加文章
+        /// </summary>
+        /// <param name="idchannel"></param>
+        /// <param name="title"></param>
+        /// <param name="imgurl"></param>
+        /// <param name="summary"></param>
+        /// <param name="content"></param>
+        /// <param name="iduser"></param>
+        /// <param name="username"></param>
+        /// <returns></returns>
         public static bool AddArticle(int idchannel,string title,string imgurl,string summary,string content,Guid iduser,string username)
         {
             string cmdline = "insert into [una].[article](idchannel,title,imgurl,summary,[content],iduser,username,addtime,updatetime) values(@idchannel,@title,@imgurl,@summary,@content,@iduser,@username,@addtime,@updatetime)";
@@ -340,7 +418,21 @@ namespace UnaCMS
             };
             return ExecuteNonQueryWithParam(cmdline, parameters);
         }
-
+        /// <summary>
+        /// 更新文章
+        /// </summary>
+        /// <param name="idchannel"></param>
+        /// <param name="title"></param>
+        /// <param name="imgurl"></param>
+        /// <param name="summary"></param>
+        /// <param name="content"></param>
+        /// <param name="tags"></param>
+        /// <param name="status"></param>
+        /// <param name="recommend"></param>
+        /// <param name="iduser"></param>
+        /// <param name="username"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public static bool UpdateArticle(int idchannel,string title,string imgurl,string summary,string content,string tags,ArticleStatus status,RecommendStatus recommend,Guid iduser,string username,Guid id)
         {
             string cmdline = "update [una].[article] set idchannel=@idchannel,title=@title,imgurl=@imgurl,summary=@summary,[content]=@";
@@ -360,7 +452,11 @@ namespace UnaCMS
             };
             return ExecuteNonQueryWithParam(cmdline, parameters);
         }
-
+        /// <summary>
+        /// 删除文章
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public static bool DeleteArticle(Guid id)
         {
             string cmdline = "delete from [una].[article] where id=@id";
@@ -370,9 +466,68 @@ namespace UnaCMS
             };
             return ExecuteNonQueryWithParam(cmdline, parameters);
         }
-        public static JArray GetArticleForChannel(int idchannel,int startindex,int pagesize)
+        /// <summary>
+        /// 按添加时间排序获取分页文章列表
+        /// </summary>
+        /// <param name="idchannel"></param>
+        /// <param name="startindex"></param>
+        /// <param name="pagesize"></param>
+        /// <returns></returns>
+        public static JArray GetArticleForChannelOrderByAddTime(int idchannel,int startindex,int pagesize)
         {
+            string cmdline = @"select top @pagesize * from 
+                                (select row_number()over(order by addtime)rownumber,* from [una].[article])a
+                                where rownumber>@prev";
 
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@pagesize",pagesize),
+                new SqlParameter("@prev",(startindex-1)*pagesize)
+            };
+            return ExecuteQueryWithParam(cmdline, parameters);
+        }
+        /// <summary>
+        /// 按更新时间获取分页文章列表
+        /// </summary>
+        /// <param name="idchannel"></param>
+        /// <param name="startindex"></param>
+        /// <param name="pagesize"></param>
+        /// <returns></returns>
+        public static JArray GetArticleForChannelOrderByUpdateTime(int idchannel, int startindex, int pagesize)
+        {
+            string cmdline = @"select top @pagesize * from 
+                                (select row_number()over(order by updatetime)rownumber,* from [una].[article])a
+                                where rownumber>@prev";
+
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@pagesize",pagesize),
+                new SqlParameter("@prev",(startindex-1)*pagesize)
+            };
+            return ExecuteQueryWithParam(cmdline, parameters);
+        }
+        /// <summary>
+        /// 按Channel获取文章总数
+        /// </summary>
+        /// <param name="idchannel"></param>
+        /// <returns></returns>
+        public static int GetTotalArticleCountForChannel(int idchannel)
+        {
+            string cmdline = "select count(*) from [una].[article] where idchannel=@idchannel";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@idchannel",idchannel)
+            };
+            return ExecuteGetCountWithParam(cmdline, parameters);
+        }
+        /// <summary>
+        /// 获取文章总数
+        /// </summary>
+        /// <returns></returns>
+        public static int GetTotalArticleCount()
+        {
+            string cmdline = "select count(*) from [una].[article]";
+            return ExecuteGetCount(cmdline);
         }
         #endregion
 

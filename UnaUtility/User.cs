@@ -17,7 +17,7 @@ namespace UnaUtility
         private string _avatar = string.Empty;
         private string _nick_name = string.Empty;
         private int _sex = 0;
-        private DateTime _create_time = DateTime.Now;
+        private DateTime _add_time = DateTime.Now;
         private string _reg_ip = string.Empty;
 
         /// <summary>
@@ -86,10 +86,10 @@ namespace UnaUtility
             get { return _sex; }
             set { _sex = value; }
         }
-        public DateTime CreateTime
+        public DateTime AddTime
         {
-            get { return _create_time; }
-            set { _create_time = value; }
+            get { return _add_time; }
+            set { _add_time = value; }
         }
         public string RegIp
         {
