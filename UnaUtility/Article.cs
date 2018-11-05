@@ -21,7 +21,9 @@ namespace UnaUtility
         private int _view_count = 0;
         private int _like_count = 0;
         private Guid _user_id;
-        private string _user_name;
+        private string _user_name=string.Empty;
+        private string _republish=string.Empty;
+        private string _republish_link = string.Empty;
         private DateTime _add_time = DateTime.Now;
         private DateTime? _update_time;
 
@@ -144,6 +146,22 @@ namespace UnaUtility
         {
             get { return _user_name; }
             set { _user_name = value; }
+        }
+        /// <summary>
+        /// 转载
+        /// </summary>
+        public string Republish
+        {
+            get { return _republish; }
+            set { _republish = value; }
+        }
+        /// <summary>
+        /// 转载原地址
+        /// </summary>
+        public string RepublishLink
+        {
+            get { return _republish_link; }
+            set { _republish_link = value; }
         }
         /// <summary>
         /// 文章添加时间

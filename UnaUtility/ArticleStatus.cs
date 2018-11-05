@@ -7,6 +7,7 @@ namespace UnaUtility
     {
         Normal = 0,
         UnApprove = 1,
-        Approved = 2
+        Approved = 2,
+        Republish=3
     }
 }
