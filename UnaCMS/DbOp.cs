@@ -387,6 +387,20 @@ namespace UnaCMS
             string cmdline = "select count(*) from [una].[user]";
             return ExecuteGetCount(cmdline);
         }
+        /// <summary>
+        /// 删除用户
+        /// </summary>
+        /// <param name="iduser"></param>
+        /// <returns></returns>
+        public static bool DeleteUser(Guid iduser)
+        {
+            string cmdline = "delete from [una].[user] where id=@id";
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@id",iduser)
+            };
+            return ExecuteNonQueryWithParam(cmdline, parameters);
+        }
         #endregion
 
         #region 文章
