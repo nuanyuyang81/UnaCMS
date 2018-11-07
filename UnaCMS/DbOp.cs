@@ -98,7 +98,7 @@ namespace UnaCMS
         }
 
         /// <summary>
-        /// 执行带参Query数据库命令，返回JOBject
+        /// 执行带参Query数据库命令，返回JObject
         /// </summary>
         /// <param name="cmdline"></param>
         /// <param name="parameters"></param>
@@ -109,10 +109,12 @@ namespace UnaCMS
             {
                 SqlCommand cmd = new SqlCommand(cmdline,conn);
                 cmd.Parameters.AddRange(parameters);
-                SqlDataReader reader = cmd.ExecuteReader();
-                if (reader.Read())
+                SqlDataAdapter sqlDataAdapter = new SqlDataAdapter(cmd);
+                DataSet dataSet = new DataSet();
+                sqlDataAdapter.Fill(dataSet);
+                if (dataSet != null&&dataSet.Tables[0].Rows.Count>0)
                 {
-                    return JObject.FromObject(reader, JsonSerializer.CreateDefault(new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                    return JObject.FromObject(dataSet.Tables[0].Rows[0], JsonSerializer.CreateDefault(new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
                 }
             }
             return null;
@@ -220,10 +222,10 @@ namespace UnaCMS
             {
                 new SqlParameter("@isdefault",true)
             };
-            JObject result = ExecuteQueryObject(cmdline, parameters);
+            JArray result = ExecuteQueryWithParam(cmdline, parameters);
             if (result != null)
             {
-                return Convert.ToInt32(result["id"]);
+                return Convert.ToInt32(result[0]["id"]);
             }
             return -1;
         }
@@ -240,28 +242,56 @@ namespace UnaCMS
         /// <param name="email"></param>
         /// <param name="regip"></param>
         /// <returns></returns>
-        public static bool RegUser(string username,string password,string email,string regip)
+        public static string RegUser(string username,string password,string email,string regip)
         {
-            Guid salt = Guid.NewGuid();
             int defaultusergroup = GetDefaultUserGroup();
-            byte[] passwordAndSaltBytes = System.Text.Encoding.UTF8.GetBytes(password + salt);
+            byte[] passwordAndSaltBytes = System.Text.Encoding.UTF8.GetBytes(password);
             byte[] hashBytes = new System.Security.Cryptography.SHA256Managed().ComputeHash(passwordAndSaltBytes);
             string hashString = Convert.ToBase64String(hashBytes);
-            if (defaultusergroup > 0)
+            if (!CheckUserExist(username,email))
             {
-                string cmdline = "inesrt into [una].[user](id,idgroup,username,salt,password,email,addtime,regip) values(@id,@idgroup,@username,@salt,@password,@email,@addtime,@regip)";
-                SqlParameter[] parameters =
+                if (defaultusergroup > 0)
                 {
-                    new SqlParameter("@id",Guid.NewGuid()),
-                    new SqlParameter("@idgroup",defaultusergroup),
-                    new SqlParameter("@username",username),
-                    new SqlParameter("@salt",salt),
-                    new SqlParameter("@password",hashString),
-                    new SqlParameter("@email",email),
-                    new SqlParameter("@addtime",DateTime.Now),
-                    new SqlParameter("@regip",regip)
-                };
-                return ExecuteNonQueryWithParam(cmdline, parameters);
+                    string cmdline = "insert into [una].[user](id,idgroup,username,password,email,addtime,regip) values(@id,@idgroup,@username,@password,@email,@addtime,@regip)";
+                    SqlParameter[] parameters =
+                    {
+                        new SqlParameter("@id",Guid.NewGuid()),
+                        new SqlParameter("@idgroup",defaultusergroup),
+                        new SqlParameter("@username",username),
+                        new SqlParameter("@password",hashString),
+                        new SqlParameter("@email",email),
+                        new SqlParameter("@addtime",DateTime.Now),
+                        new SqlParameter("@regip",regip)
+                    };
+                    if (ExecuteNonQueryWithParam(cmdline, parameters))
+                    {
+                        return "注册成功";
+                    }
+                    else
+                    {
+                        return "注册失败";
+                    }
+                }
+            }
+            else
+            {
+                return "用户名或邮箱已经被注册";
+            }
+            return "注册失败";
+        }
+
+        public static bool CheckUserExist(string username,string email)
+        {
+            string cmdline = "select * from [una].[user] where username=@username or email=@email";
+            SqlParameter[] sqlParameters =
+            {
+                new SqlParameter("@username",username),
+                new SqlParameter("@email",email)
+            };
+            JArray result = ExecuteQueryWithParam(cmdline, sqlParameters);
+            if (result != null&&result.Count>0)
+            {
+                return true;
             }
             return false;
         }
@@ -316,24 +346,23 @@ namespace UnaCMS
         /// <returns></returns>
         public static string Login(string user,string password)
         {
-            string salt = GetSalt(user);
-            if (!String.IsNullOrEmpty(salt))
+            if ((!String.IsNullOrEmpty(password))&&(!String.IsNullOrEmpty(user)))
             {
-                byte[] passwordAndSaltBytes = System.Text.Encoding.UTF8.GetBytes(password + salt);
+                byte[] passwordAndSaltBytes = System.Text.Encoding.UTF8.GetBytes(password);
 
                 byte[] hashBytes = new System.Security.Cryptography.SHA256Managed().ComputeHash(passwordAndSaltBytes);
 
                 string hashpassword = Convert.ToBase64String(hashBytes);
-                string cmdline = "select * from [una].[user] where salt=@salt and password=@password";
+                string cmdline = "select * from [una].[user] where password=@password and username=@user";
                 SqlParameter[] parameters =
                 {
-                    new SqlParameter("@salt",salt),
+                    new SqlParameter("@user",user),
                     new SqlParameter("@password",hashpassword)
                 };
                 JArray result = ExecuteQueryWithParam(cmdline, parameters);
                 if (result != null && result.Count > 0)
                 {
-                    return string.Format("用户:{0} 登录成功，Id:{1}",result["username"].ToString(),result["id"].ToString());
+                    return string.Format("用户:{0} 登录成功，Id:{1}",result[0]["username"].ToString(),result[0]["id"].ToString());
                 }
                 else
                 {

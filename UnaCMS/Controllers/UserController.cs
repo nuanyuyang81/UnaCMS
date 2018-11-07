@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -25,9 +26,22 @@ namespace UnaCMS.Controllers
         /// <returns></returns>
         [AllowAnonymous]
         [HttpPost,Route("register")]
-        public bool Register(string usn,string pwd,string email,string regip)
+        public string Register(dynamic obj)
         {
+            string usn = Convert.ToString(obj.usn);
+            string pwd = Convert.ToString(obj.pwd);
+            string email = Convert.ToString(obj.email);
+            string regip = Convert.ToString(obj.regip);
             return DbOp.RegUser(usn, pwd, email, regip);
+        }
+        [AllowAnonymous]
+        [HttpPost,Route("login")]
+        public string Login(dynamic obj)
+        {
+            string userinfo = Convert.ToString(obj.usr);
+            string pwd = Convert.ToString(obj.pwd);
+
+            return DbOp.Login(userinfo, pwd);
         }
         /// <summary>
         /// 删除用户信息
@@ -39,6 +53,13 @@ namespace UnaCMS.Controllers
         public bool DelUser(Guid iduser)
         {
             return DbOp.DeleteUser(iduser);
+        }
+
+        [Authorize]
+        [HttpGet,Route("listuser")]
+        public JArray ListUsre(int st,int pz)
+        {
+            return DbOp.GetUserByAddTime(st, pz);
         }
     }
 }
