@@ -1,37 +1,25 @@
-﻿using System.Linq;
+﻿using System.IO;
 using System.Web.Http;
 using System.Web.Http.Controllers;
 using System.Web.Security;
-
 namespace UnaCMS
 {
     public class AuthTokenAttribute : AuthorizeAttribute
     {
-        public override void OnAuthorization(HttpActionContext actionContext)
+        protected override bool IsAuthorized(HttpActionContext actionContext)
         {
-            //从http请求的头里面获取身份验证信息，验证是否是请求发起方的ticket
+            bool pass = false;
             var authorization = actionContext.Request.Headers.Authorization;
             if ((authorization != null) && (authorization.Parameter != null))
             {
-                //解密用户Ticket，校验用户名密码
-                var encryptTicket = authorization.Parameter;
-                if (ValidateTicket(encryptTicket).Contains("登录成功"))
+                string encryTicket = authorization.Parameter;
+                string validateresult = ValidateTicket(encryTicket);
+                if (validateresult.Contains("登陆成功"))
                 {
-                    base.IsAuthorized(actionContext);
-                }
-                else
-                {
-                    HandleUnauthorizedRequest(actionContext);
+                    pass = true;
                 }
             }
-            //如果取不到身份验证信息，并且不允许匿名访问，则返回未验证401
-            else
-            {
-                var attributes = actionContext.ActionDescriptor.GetCustomAttributes<AllowAnonymousAttribute>().OfType<AllowAnonymousAttribute>();
-                bool isAnonymous = attributes.Any(a => a is AllowAnonymousAttribute);
-                if (isAnonymous) base.OnAuthorization(actionContext);
-                else HandleUnauthorizedRequest(actionContext);
-            }
+            return pass;
         }
         /// <summary>
         /// 验证用户名密码是否正确
@@ -40,11 +28,19 @@ namespace UnaCMS
         /// <returns></returns>
         private string ValidateTicket(string encryptTicket)
         {
-            var strTicket = FormsAuthentication.Decrypt(encryptTicket).UserData;
-            var index = strTicket.IndexOf("&");
-            string username = strTicket.Substring(0, index);
-            string password = strTicket.Substring(index + 1);
-            return DbOp.Login(username, password);          
+            string username = encryptTicket.Substring(0,encryptTicket.IndexOf("&"));
+            string password = encryptTicket.Substring(encryptTicket.IndexOf("&")+1);
+            string result= DbOp.Login(username, password);
+            return result;
+        }
+        private void WriteToLog(string content)
+        {
+            using(FileStream fs=new FileStream(@"D:\Log\log.txt", FileMode.Append, FileAccess.Write))
+            {
+                StreamWriter streamWriter = new StreamWriter(fs);
+                streamWriter.WriteLine(content);
+                streamWriter.Flush();
+            }
         }
     }
 }

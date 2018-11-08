@@ -339,7 +339,7 @@ namespace UnaCMS
             return string.Empty;
         }
         /// <summary>
-        /// 用户登录
+        /// 用户登陆
         /// </summary>
         /// <param name="user"></param>
         /// <param name="password"></param>
@@ -362,7 +362,7 @@ namespace UnaCMS
                 JArray result = ExecuteQueryWithParam(cmdline, parameters);
                 if (result != null && result.Count > 0)
                 {
-                    return string.Format("用户:{0} 登录成功，Id:{1}",result[0]["username"].ToString(),result[0]["id"].ToString());
+                    return string.Format("用户:{0} 登陆成功，Id:{1}", result[0]["username"].ToString(),result[0]["id"].ToString());
                 }
                 else
                 {
@@ -396,8 +396,8 @@ namespace UnaCMS
         /// <returns></returns>
         public static JArray GetUserByAddTime(int startindex,int pagesize)
         {
-            string cmdline = @"select top @pagesize * from 
-                                (select row_number()over(order by addtime)rownumber,* from [una].[user])a
+            string cmdline = "select top "+pagesize+" * from "+
+                                @"(select row_number()over(order by addtime)rownumber,* from [una].[user])a
                                 where rownumber>@prev";
 
             SqlParameter[] parameters =

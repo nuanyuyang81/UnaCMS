@@ -48,17 +48,27 @@ namespace UnaCMS.Controllers
         /// </summary>
         /// <param name="iduser"></param>
         /// <returns></returns>
-        [Authorize]
+        [AuthToken]
         [HttpGet,Route("delusr")]
         public bool DelUser(Guid iduser)
         {
             return DbOp.DeleteUser(iduser);
         }
 
-        [Authorize]
+        /// <summary>
+        /// 用户列表,最大单页显示100条
+        /// </summary>
+        /// <param name="st"></param>
+        /// <param name="pz"></param>
+        /// <returns></returns>
+        [AuthToken]
         [HttpGet,Route("listuser")]
         public JArray ListUsre(int st,int pz)
         {
+            if (pz > 100)
+            {
+                pz = 100;
+            }
             return DbOp.GetUserByAddTime(st, pz);
         }
     }
